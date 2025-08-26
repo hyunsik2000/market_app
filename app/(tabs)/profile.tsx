@@ -1,10 +1,10 @@
 // app/(tabs)/profile.tsx
 import Header from "@/components/Common/Header";
+import UserProfile from "@/components/Profile/UserProfile";
 import { theme } from "@/styles/theme";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import {
-  Image,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -21,6 +21,7 @@ interface MenuItem {
   title: string;
   icon: string;
   iconFamily?: "ionicons" | "material-community";
+  iconColor: string;
   badge?: number;
   // onPress?: () => void;
 }
@@ -32,19 +33,21 @@ export default function ProfileScreen() {
       id: "selling",
       title: "판매내역",
       icon: "receipt-outline",
+      iconColor: theme.colors.primary,
       // onPress: () => router.push("/profile/selling"),
     },
     {
       id: "buying",
       title: "구매내역",
       icon: "basket-outline",
+      iconColor: theme.colors.primary,
       // onPress: () => router.push("/profile/buying"),
     },
     {
       id: "likes",
       title: "관심목록",
       icon: "heart-outline",
-      badge: 3,
+      iconColor: "#fc030f",
       // onPress: () => router.push("/profile/likes"),
     },
   ];
@@ -55,18 +58,21 @@ export default function ProfileScreen() {
       id: "review",
       title: "받은 리뷰",
       icon: "star-outline",
+      iconColor: "#577ef2",
       // onPress: () => router.push("/profile/reviews"),
     },
     {
       id: "manner",
       title: "매너온도",
       icon: "thermometer-outline",
+      iconColor: "#fa23b2",
       // onPress: () => router.push("/profile/manner"),
     },
     {
       id: "blocked",
       title: "차단 목록",
       icon: "ban-outline",
+      iconColor: "#fc030f",
       // onPress: () => router.push("/profile/blocked"),
     },
   ];
@@ -77,19 +83,21 @@ export default function ProfileScreen() {
       id: "notice",
       title: "공지사항",
       icon: "megaphone-outline",
-      badge: 1,
+      iconColor: theme.colors.primary,
       // onPress: () => router.push("/notice"),
     },
     {
       id: "customer",
       title: "고객센터",
       icon: "chatbubbles-outline",
+      iconColor: "#186b05",
       // onPress: () => router.push("/customer-service"),
     },
     {
       id: "settings",
       title: "설정",
       icon: "settings-outline",
+      iconColor: "",
       // onPress: () => router.push("/settings"),
     },
   ];
@@ -97,11 +105,6 @@ export default function ProfileScreen() {
   const handleNotificationPress = () => {
     // router.push("/notifications");
   };
-
-  const handleEditProfile = () => {
-    // router.push("/profile/edit");
-  };
-
   const renderMenuItem = (item: MenuItem) => (
     <TouchableOpacity
       key={item.id}
@@ -114,14 +117,10 @@ export default function ProfileScreen() {
           <MaterialCommunityIcons
             name={item.icon as any}
             size={24}
-            color={theme.colors.text}
+            color={item.iconColor}
           />
         ) : (
-          <Ionicons
-            name={item.icon as any}
-            size={24}
-            color={theme.colors.text}
-          />
+          <Ionicons name={item.icon as any} size={24} color={item.iconColor} />
         )}
         <Text style={styles.menuItemText}>{item.title}</Text>
       </View>
@@ -134,7 +133,7 @@ export default function ProfileScreen() {
         <Ionicons
           name="chevron-forward"
           size={20}
-          color={theme.colors.gray[400]}
+          color={theme.colors.primaryDark}
         />
       </View>
     </TouchableOpacity>
@@ -156,31 +155,7 @@ export default function ProfileScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 프로필 섹션 */}
-        <View style={styles.profileSection}>
-          <TouchableOpacity
-            style={styles.profileCard}
-            onPress={handleEditProfile}
-            activeOpacity={0.9}
-          >
-            <View style={styles.profileInfo}>
-              <View style={styles.profileImageContainer}>
-                <Image
-                  source={{ uri: "https://via.placeholder.com/80" }}
-                  style={styles.profileImage}
-                />
-              </View>
-              <View style={styles.profileTextContainer}>
-                <Text style={styles.profileName}>반갑준성반갑다수</Text>
-                <Text style={styles.profileSubtext}>경기도 화성시 분당구</Text>
-              </View>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={24}
-              color={theme.colors.gray[400]}
-            />
-          </TouchableOpacity>
-        </View>
+        <UserProfile />
 
         {/* 나의 거래 섹션 */}
         <View style={styles.menuSection}>
@@ -236,11 +211,6 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius["2xl"],
     marginBottom: theme.spacing.lg,
     padding: theme.spacing["lg"],
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
   },
   profileCard: {
     flexDirection: "row",
@@ -278,20 +248,16 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.lg,
   },
   sectionTitle: {
-    fontSize: theme.typography.fontSize.sm,
-    fontWeight: theme.typography.fontWeight.semiBold,
-    color: theme.colors.textSecondary,
+    fontSize: theme.typography.fontSize.md,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.black,
     marginBottom: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
   },
   menuContainer: {
     backgroundColor: theme.colors.white,
     borderRadius: theme.borderRadius["2xl"],
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
   },
   menuItem: {
     flexDirection: "row",
@@ -306,8 +272,10 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: theme.typography.fontSize.md,
+    fontWeight: theme.typography.fontWeight.medium,
     color: theme.colors.text,
     marginLeft: theme.spacing.xl,
+    marginBottom: theme.spacing.xs,
   },
   menuItemRight: {
     flexDirection: "row",
