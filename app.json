@@ -4,34 +4,41 @@
     "slug": "market-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
     "scheme": "marketapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.changgo.marketapp"
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.changgo.marketapp"
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "output": "static"
     },
     "plugins": [
-      "expo-router",
       [
-        "expo-splash-screen",
+        "@mj-studio/react-native-naver-map",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "client_id": "qftayw56oo",
+          "android": {
+            "ACCESS_FINE_LOCATION": true,
+            "ACCESS_COARSE_LOCATION": true,
+            "ACCESS_BACKGROUND_LOCATION": true
+          }
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraMavenRepos": [
+              "https://repository.map.naver.com/archive/maven"
+            ]
+          }
         }
       ]
     ],

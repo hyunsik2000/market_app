@@ -1,75 +1,172 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+// app/(tabs)/index.tsx
+import Header from "@/components/Common/Header";
+import Category from "@/components/Home/Category";
+import ProductGrid from "@/components/Home/ProductGrid";
+import { theme } from "@/styles/theme";
+import {
+  handleNotificationPress,
+  handleSearchPress,
+} from "@/utils/Header/handleNotification";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
+import {
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+interface Product {
+  id: number;
+  title: string;
+  price: string;
+  location: string;
+  timeAgo: string;
+  image?: string;
+  isLiked?: boolean;
+  chatCount?: number;
+}
+
+const mockProducts: Product[] = [
+  {
+    id: 1,
+    title: "피치패드 PC 정리 합니다.",
+    price: "12,340,000원",
+    location: "서울시 육계동",
+    timeAgo: "6분전",
+    isLiked: false,
+    chatCount: 0,
+  },
+  {
+    id: 2,
+    title: "피치패드 PC 정리 합니다.",
+    price: "12,340,000원",
+    location: "서울시 육계동",
+    timeAgo: "6분전",
+    isLiked: false,
+    chatCount: 0,
+  },
+  {
+    id: 3,
+    title: "피치패드 PC 정리 합니다.",
+    price: "12,340,000원",
+    location: "서울시 육계동",
+    timeAgo: "6분전",
+    isLiked: false,
+    chatCount: 0,
+  },
+  {
+    id: 4,
+    title: "피치패드 PC 정리 합니다.",
+    price: "12,340,000원",
+    location: "서울시 육계동",
+    timeAgo: "6분전",
+    isLiked: false,
+    chatCount: 0,
+  },
+  {
+    id: 5,
+    title: "피치패드 PC 정리 합니다.",
+    price: "12,340,000원",
+    location: "서울시 육계동",
+    timeAgo: "6분전",
+    isLiked: false,
+    chatCount: 0,
+  },
+  {
+    id: 6,
+    title: "피치패드 PC 정리 합니다.",
+    price: "12,340,000원",
+    location: "서울시 육계동",
+    timeAgo: "6분전",
+    isLiked: false,
+    chatCount: 0,
+  },
+];
+
+const categories = ["인기", "대량판매", "특별찬스", "운송", "인테리어", ""];
 
 export default function HomeScreen() {
+  const [selectedCategory, setSelectedCategory] = useState(categories[0]);
+  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+
+    // 실제로는 fetch API 같은 비동기 호출
+    setTimeout(() => {
+      // 카테고리별로 데이터 필터링 가능
+      const filtered = mockProducts.filter((p) =>
+        selectedCategory === "인기" ? true : p.title.includes(selectedCategory)
+      );
+      setProducts(filtered);
+      setLoading(false);
+    }, 1000); // 1초 로딩 시뮬레이션
+  }, [selectedCategory]);
+
+  const toggleLike = (id: number) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, isLiked: !p.isLiked } : p))
+    );
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <Header
+        title="옥계동"
+        notificationCount={100}
+        onNotificationPress={handleNotificationPress}
+        onSearchPress={handleSearchPress}
+      />
+
+      {/* Category Navigation */}
+      <Category
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+      />
+
+      {/* Product Grid */}
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <ProductGrid
+          products={products}
+          loading={loading}
+          onToggleLike={toggleLike}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity style={styles.fab}>
+        <Ionicons
+          name="add"
+          size={theme.layout.iconSize.md}
+          color={theme.colors.white}
+        />
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  fab: {
+    position: "absolute",
+    bottom: theme.spacing["2xl"],
+    right: theme.spacing["2xl"],
+    width: 56,
+    height: 56,
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    ...theme.shadows.xl,
   },
 });
