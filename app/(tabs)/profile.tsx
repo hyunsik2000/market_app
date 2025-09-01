@@ -205,6 +205,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: theme.spacing.lg, // 좌우 여백 추가
+    paddingTop: theme.spacing.lg,
   },
   profileSection: {
     backgroundColor: theme.colors.white,
