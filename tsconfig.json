@@ -11,6 +11,7 @@
       "@utils/*": ["utils/*"],
       "@hooks/*": ["hooks/*"],
       "@types/*": ["types/*"],
+      "@mock/*": ["mock/*"],
       "@assets/*": ["public/assets/*"],
       "@fonts/*": ["public/assets/fonts/*"],
       "@icons/*": ["public/assets/icons/*"],

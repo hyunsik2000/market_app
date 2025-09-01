@@ -22,6 +22,7 @@ module.exports = function (api) {
             "@components": "./components",
             "@styles": "./styles",
             "@utils": "./utils",
+            "@mock": "./mock",
             "@hooks": "./hooks",
             "@types": "./types",
             "@fonts": "./public/assets/fonts",
