@@ -20,6 +20,16 @@ export const formatChatTime = (date: Date): string => {
   return `${date.getMonth() + 1}월 ${date.getDate()}일`;
 };
 
+export function formatDayChatTime(timestamp: number): string {
+  const d = new Date(timestamp);
+
+  // 24시간제 → 2자리수 맞추기
+  const hh = d.getHours().toString().padStart(2, "0");
+  const mm = d.getMinutes().toString().padStart(2, "0");
+
+  return `${hh}:${mm}`; // 예: 09:30, 21:05
+}
+
 /**
  * 상세 시간 포맷팅 (채팅 메시지용)
  * @param date - 포맷팅할 날짜

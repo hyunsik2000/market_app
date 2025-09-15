@@ -57,8 +57,8 @@ const ChatRoomItem: React.FC<ChatRoomItemProps> = ({
         <Swipeable
           ref={swipeableRef}
           renderRightActions={renderRightActions}
-          overshootFriction={8}
-          friction={2}
+          overshootFriction={7}
+          friction={3}
           rightThreshold={40}
           onSwipeableOpen={() => {
             setIsOpen(true);

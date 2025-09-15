@@ -26,6 +26,7 @@ import { ChatRoom } from "@/types/chat";
 
 // Styles
 import { theme } from "@/styles/theme";
+import { router } from "expo-router";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 
 export default function ChatScreen() {
@@ -56,9 +57,14 @@ export default function ChatScreen() {
 
   // 채팅방 클릭 핸들러
   const handleChatPress = (chatRoom: ChatRoom) => {
-    // router.push({ pathname: "/chat/[id]", params: { id: chatRoom.id } });
+    router.push({
+      pathname: "/chat/[id]",
+      params: {
+        id: chatRoom.id,
+        title: chatRoom.participant.name, // 헤더 타이틀 용
+      },
+    });
   };
-
   // 필터 토글
   const toggleFilter = () => {
     setSelectedFilter((prev) => (prev === "all" ? "unread" : "all"));

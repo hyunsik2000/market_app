@@ -9,6 +9,15 @@ export default function RootLayout() {
       <CustomAlertProvider>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="chat/[id]"
+            options={{
+              title: "대화",
+              headerBackTitle: "뒤로",
+              // iOS large title 등 원한다면 여기서 추가
+              // presentation: "card",
+            }}
+          />
         </Stack>
       </CustomAlertProvider>
     </GestureHandlerRootView>
