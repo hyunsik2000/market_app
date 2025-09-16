@@ -1,7 +1,11 @@
 // app/chat/[id].tsx
 import EmptyChatState from "@/components/Chat/EmptyChatState";
 import { theme } from "@/styles/theme";
-import { formatDayChatTime } from "@/utils/formatTime";
+import {
+  formatChatDate,
+  formatDayChatTime,
+  isSameDay,
+} from "@/utils/formatTime";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import React, {
@@ -25,6 +29,17 @@ import {
   View,
 } from "react-native";
 
+/** ===== 팔레트(밝은 톤 + 가독성) ===== */
+const CHAT_PALETTE = {
+  bg: "#F7F8FA", // 화면 배경
+  peerBg: "#FFFFFF", // 상대 버블
+  peerBorder: "#E5E7EB",
+  mineBg: "#EAF2FF", // 내 버블(연한 블루 틴트)
+  text: "#111827", // 본문 텍스트
+  time: "#9AA2B2", // 시간
+};
+
+/** ===== 타입 ===== */
 type ChatMessage = {
   id: string;
   text: string;
@@ -32,15 +47,7 @@ type ChatMessage = {
   createdAt: number;
   read?: boolean;
 };
-const CHAT_PALETTE = {
-  bg: "#F7F8FA",
-  mineBg: "#EAF2FF",
-  mineText: "#0F172A",
-  peerBg: "#FFFFFF",
-  peerBorder: "#E5E7EB",
-  peerText: "#111827",
-  time: "#9AA2B2",
-};
+
 export default function ChatRoomScreen() {
   const { id, title, avatar, productTitle, productPrice, productThumb } =
     useLocalSearchParams<{
@@ -62,19 +69,19 @@ export default function ChatRoomScreen() {
       id: "m1",
       text: "안녕하세요",
       mine: true,
-      createdAt: Date.now() - 1000 * 60 * 60 * 3,
+      createdAt: Date.now() - 1000 * 60 * 60 * 24 * 1 + 1000 * 60 * 10, // 어제
     },
     {
       id: "m2",
       text: "네 안녕하세요",
       mine: false,
-      createdAt: Date.now() - 1000 * 60 * 60 * 3 + 60 * 1000,
+      createdAt: Date.now() - 1000 * 60 * 60 * 24 * 1 + 1000 * 60 * 11,
     },
     {
       id: "m3",
       text: "현재 정리 중이신거 구매 가능할까요?",
       mine: true,
-      createdAt: Date.now() - 1000 * 60 * 60 * 2,
+      createdAt: Date.now() - 1000 * 60 * 60 * 2, // 오늘
     },
     {
       id: "m4",
@@ -84,11 +91,12 @@ export default function ChatRoomScreen() {
     },
   ]);
 
-  // 헤더를 자체 구현(스택 헤더 숨김)
+  // 스택 헤더 숨기고 커스텀 헤더 사용
   useEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
+  // 최신→과거 정렬 + inverted
   const data = useMemo(
     () => [...messages].sort((a, b) => b.createdAt - a.createdAt),
     [messages]
@@ -105,20 +113,25 @@ export default function ChatRoomScreen() {
     inputRef.current?.focus();
   }, [input]);
 
-  const handleFocusInput = () => {
-    inputRef.current?.focus();
-  };
+  const handleFocusInput = () => inputRef.current?.focus();
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Custom Header */}
+      {/* StatusBar(안드로이드 상단 겹침 방지 세팅과 함께 사용) */}
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#fff"
+        translucent={false}
+      />
+
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerBack}
           onPress={() => router.back()}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
+          <Ionicons name="chevron-back" size={24} color={CHAT_PALETTE.text} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle} numberOfLines={1}>
@@ -167,7 +180,6 @@ export default function ChatRoomScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         {messages.length === 0 ? (
-          // ▶ 첫 대화가 없는 경우
           <EmptyChatState
             onPress={handleFocusInput}
             productThumb={productThumb as string}
@@ -180,73 +192,80 @@ export default function ChatRoomScreen() {
             inverted
             keyExtractor={(m) => m.id}
             contentContainerStyle={styles.listContainer}
-            renderItem={({ item }) => (
-              <View
-                style={[
-                  styles.bubbleRow, // row 컨테이너
-                  item.mine ? styles.rowEnd : styles.rowStart, // 내/상대 정렬
-                ]}
-              >
-                {/* 내가 보낸 메시지면: 시간 ← 버블 */}
-                {item.mine && (
-                  <Text
-                    numberOfLines={1}
-                    style={[styles.timeText, styles.timeLeft]}
-                  >
-                    {formatDayChatTime(item.createdAt)}
-                  </Text>
-                )}
+            renderItem={({ item, index }) => {
+              // inverted + 최신→과거 정렬이므로, index+1 = 더 오래된 메시지
+              const prev = data[index + 1];
+              const showDayChip =
+                !prev || !isSameDay(item.createdAt, prev.createdAt);
 
-                {/* 말풍선 */}
-                <View
-                  style={[
-                    styles.bubble,
-                    item.mine ? styles.bubbleMine : styles.bubblePeer,
-                  ]}
-                >
-                  <Text
+              return (
+                <View>
+                  {/* 날짜 칩 (해당 날짜의 첫 메시지 위) */}
+                  {showDayChip && (
+                    <View style={styles.dayChipWrap}>
+                      <View style={styles.dayChip}>
+                        <Text style={styles.dayChipText}>
+                          {formatChatDate(item.createdAt)}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* 버블 + 시간 (내: 시간 ← 버블 / 상대: 버블 → 시간) */}
+                  <View
                     style={[
-                      styles.bubbleText,
-                      item.mine && styles.bubbleTextMine,
+                      styles.bubbleRow,
+                      item.mine ? styles.rowEnd : styles.rowStart,
                     ]}
                   >
-                    {item.text}
-                  </Text>
+                    {item.mine && (
+                      <Text
+                        numberOfLines={1}
+                        style={[styles.timeText, styles.timeLeft]}
+                      >
+                        {formatDayChatTime(item.createdAt)}
+                      </Text>
+                    )}
 
-                  {/* (선택) 체크표시는 계속 버블 안에 둘 거면 유지 */}
-                  {/* <View style={styles.metaRow}>
-          {item.mine && (
-            <Ionicons
-              name={item.read ? "checkmark-done" : "checkmark"}
-              size={14}
-              color={item.read ? theme.colors.primary : theme.colors.gray[400]}
-              style={{ marginLeft: 6 }}
-            />
-          )}
-        </View> */}
+                    <View
+                      style={[
+                        styles.bubble,
+                        item.mine ? styles.bubbleMine : styles.bubblePeer,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.bubbleText,
+                          item.mine && styles.bubbleTextMine,
+                        ]}
+                      >
+                        {item.text}
+                      </Text>
+                    </View>
+
+                    {!item.mine && (
+                      <Text
+                        numberOfLines={1}
+                        style={[styles.timeText, styles.timeRight]}
+                      >
+                        {formatDayChatTime(item.createdAt)}
+                      </Text>
+                    )}
+                  </View>
                 </View>
-
-                {/* 상대 메시지면: 버블 → 시간 */}
-                {!item.mine && (
-                  <Text
-                    numberOfLines={1}
-                    style={[styles.timeText, styles.timeRight]}
-                  >
-                    {formatDayChatTime(item.createdAt)}
-                  </Text>
-                )}
-              </View>
-            )}
+              );
+            }}
             showsVerticalScrollIndicator={false}
           />
         )}
+
         {/* Input Bar */}
         <View style={styles.inputBar}>
           <TouchableOpacity style={styles.iconBtn} onPress={() => {}}>
             <Ionicons
               name="add-circle-outline"
               size={24}
-              color={theme.colors.text}
+              color={CHAT_PALETTE.text}
             />
           </TouchableOpacity>
 
@@ -260,7 +279,6 @@ export default function ChatRoomScreen() {
             onSubmitEditing={handleSend}
             multiline
           />
-
           <TouchableOpacity
             style={[styles.sendBtn, { opacity: input.trim() ? 1 : 0.4 }]}
             onPress={handleSend}
@@ -275,7 +293,7 @@ export default function ChatRoomScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Header
+  /** 컨테이너/헤더 */
   container: {
     flex: 1,
     backgroundColor: CHAT_PALETTE.bg,
@@ -301,8 +319,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
     fontSize: theme.typography.fontSize.lg,
-    fontWeight: theme.typography.fontWeight.semiBold,
-    color: theme.colors.text,
+    color: CHAT_PALETTE.text,
   },
   headerAvatar: {
     width: 32,
@@ -312,7 +329,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.gray[200],
   },
 
-  // Product float
+  /** 상품 카드 */
   productCardWrap: {
     backgroundColor: theme.colors.white,
     paddingHorizontal: theme.spacing.lg,
@@ -346,12 +363,27 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
 
-  // List & Bubbles
+  /** 리스트/버블 */
   listContainer: {
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.lg,
     backgroundColor: CHAT_PALETTE.bg,
+  },
+  dayChipWrap: {
+    alignItems: "center",
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+  },
+  dayChip: {
+    backgroundColor: "#EDEFF3",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  dayChipText: {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textSecondary,
   },
   bubbleRow: {
     flexDirection: "row",
@@ -360,17 +392,18 @@ const styles = StyleSheet.create({
   },
   rowStart: { justifyContent: "flex-start" }, // 상대
   rowEnd: { justifyContent: "flex-end" }, // 나
-  // 시간 텍스트 (바깥)
+
   timeText: {
     fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.textTertiary,
-    includeFontPadding: false, // Android baseline 보정
-    flexShrink: 0, // 줄바꿈 방지
+    color: CHAT_PALETTE.time,
+    includeFontPadding: false,
+    flexShrink: 0,
   },
   timeLeft: { marginRight: 6 }, // 내 메시지: 시간 ← 버블
   timeRight: { marginLeft: 6 }, // 상대 메시지: 버블 → 시간
+
   bubble: {
-    maxWidth: "75%", // 예: 기존 78% → 75%
+    maxWidth: "75%",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
@@ -387,16 +420,11 @@ const styles = StyleSheet.create({
   },
   bubbleText: {
     fontSize: theme.typography.fontSize.md,
-    color: CHAT_PALETTE.peerText, // 기본값
+    color: CHAT_PALETTE.text,
   },
-  bubbleTextMine: { color: CHAT_PALETTE.mineText },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-end",
-    marginTop: 4,
-  },
-  // Input
+  bubbleTextMine: { color: CHAT_PALETTE.text },
+
+  /** 입력바 */
   inputBar: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -407,7 +435,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderColor: theme.colors.gray[200],
   },
-  iconBtn: { padding: 6 },
+  iconBtn: { padding: 10 },
   input: {
     flex: 1,
     maxHeight: 120,

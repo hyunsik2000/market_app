@@ -30,6 +30,27 @@ export function formatDayChatTime(timestamp: number): string {
   return `${hh}:${mm}`; // 예: 09:30, 21:05
 }
 
+/** ===== 유틸: 날짜 비교/표시 ===== */
+export const isSameDay = (a: number, b?: number) => {
+  if (!b) return false;
+  const da = new Date(a);
+  const db = new Date(b);
+  return (
+    da.getFullYear() === db.getFullYear() &&
+    da.getMonth() === db.getMonth() &&
+    da.getDate() === db.getDate()
+  );
+};
+
+// 예: "2025년 9월 16일"
+export const formatChatDate = (ts: number) => {
+  const d = new Date(ts);
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${y}년 ${m}월 ${day}일`;
+};
+
 /**
  * 상세 시간 포맷팅 (채팅 메시지용)
  * @param date - 포맷팅할 날짜
