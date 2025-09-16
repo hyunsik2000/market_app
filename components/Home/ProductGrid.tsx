@@ -1,173 +1,278 @@
 // components/Home/ProductGrid.tsx
+import { theme } from "@/styles/theme";
+import type { Product } from "@/types/product";
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { theme } from "../../styles/theme";
-
-interface Product {
-  id: number;
-  title: string;
-  price: string;
-  location: string;
-  timeAgo: string;
-  image?: string;
-  isLiked?: boolean;
-  chatCount?: number;
-}
+import React, { memo, useCallback } from "react";
+import {
+  FlatList,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface ProductGridProps {
   products: Product[];
   loading: boolean;
   onToggleLike: (id: number) => void;
+  onPressItem?: (id: number) => void;
+  onEndReached?: () => void; // 무한스크롤
+  refreshing?: boolean; // 당겨새로고침
+  onRefresh?: () => void;
 }
+
+const ProductCard = memo(function ProductCard({
+  item,
+  onToggleLike,
+  onPressItem,
+}: {
+  item: Product;
+  onToggleLike: (id: number) => void;
+  onPressItem?: (id: number) => void;
+}) {
+  const handlePress = useCallback(
+    () => onPressItem?.(item.id),
+    [item.id, onPressItem]
+  );
+
+  return (
+    <Pressable style={styles.card} onPress={handlePress}>
+      <View style={styles.imageWrap}>
+        {item.image ? (
+          <Image source={{ uri: item.image }} style={styles.image} />
+        ) : (
+          <View style={styles.placeholder}>
+            <Ionicons
+              name="image-outline"
+              size={theme.layout.iconSize.xxl}
+              color={theme.colors.placeholder}
+            />
+          </View>
+        )}
+
+        {/* 좋아요 버튼 (우상단 오버레이) */}
+        <TouchableOpacity
+          style={styles.likeBtn}
+          onPress={() => onToggleLike(item.id)}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name={item.isLiked ? "heart" : "heart-outline"}
+            size={18}
+            color={item.isLiked ? theme.colors.heartRed : theme.colors.white}
+          />
+        </TouchableOpacity>
+
+        {/* 채팅 수 뱃지(있을 때만, 우하단) */}
+        {!!item.chatCount && item.chatCount > 0 && (
+          <View style={styles.chatBadge}>
+            <Ionicons
+              name="chatbubble-ellipses"
+              size={12}
+              color={theme.colors.white}
+            />
+            <Text style={styles.chatBadgeText}>{item.chatCount}</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.info}>
+        <Text style={styles.title} numberOfLines={2}>
+          {item.title}
+        </Text>
+        <Text style={styles.price}>{item.price}</Text>
+        <View style={styles.meta}>
+          <Text style={styles.location} numberOfLines={1}>
+            {item.location}
+          </Text>
+          <Text style={styles.timeAgo}>{item.timeAgo}</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+});
+
+const SkeletonCard = () => (
+  <View style={styles.card}>
+    <View style={styles.skelImage} />
+    <View style={styles.skelLine} />
+    <View style={[styles.skelLine, styles.skelLineShort]} />
+  </View>
+);
 
 const ProductGrid: React.FC<ProductGridProps> = ({
   products,
   loading,
   onToggleLike,
+  onPressItem,
+  onEndReached,
+  refreshing,
+  onRefresh,
 }) => {
-  if (loading) {
-    // skeleton UI 6개 자리만 표시
+  const renderItem = ({ item }: { item: Product }) => (
+    <ProductCard
+      item={item}
+      onToggleLike={onToggleLike}
+      onPressItem={onPressItem}
+    />
+  );
+
+  // 최초 로딩 시 스켈레톤
+  if (loading && products.length === 0) {
     return (
-      <View style={styles.productGrid}>
-        {[...Array(6)].map((_, i) => (
-          <View key={i} style={styles.skeletonCard}>
-            <View style={styles.skeletonImage} />
-            <View style={styles.skeletonLine} />
-            <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
-          </View>
-        ))}
+      <View style={styles.listContent}>
+        <View style={styles.skeletonRow}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.productGrid}>
-      {products.map((product) => (
-        <View key={product.id} style={styles.productCard}>
-          <View style={styles.productImage}>
-            {product.image ? (
-              <Image source={{ uri: product.image }} style={styles.image} />
-            ) : (
-              <View style={styles.placeholderImage}>
-                <Ionicons
-                  name="image-outline"
-                  size={theme.layout.iconSize.xxl}
-                  color={theme.colors.placeholder}
-                />
-              </View>
-            )}
+    <FlatList
+      data={products}
+      keyExtractor={(item) => String(item.id)}
+      renderItem={renderItem}
+      numColumns={2}
+      contentContainerStyle={styles.listContent}
+      columnWrapperStyle={styles.column}
+      showsVerticalScrollIndicator={false}
+      onEndReachedThreshold={0.5}
+      onEndReached={onEndReached}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      initialNumToRender={8}
+      windowSize={10}
+      removeClippedSubviews
+      ListFooterComponent={
+        loading && products.length > 0 ? (
+          <View style={styles.footerLoading}>
+            <View style={[styles.skelLine, { width: "40%" }]} />
           </View>
-
-          <View style={styles.productInfo}>
-            <Text style={styles.productTitle} numberOfLines={2}>
-              {product.title}
-            </Text>
-            <Text style={styles.productPrice}>{product.price}</Text>
-            <View style={styles.productMeta}>
-              <Text style={styles.location}>{product.location}</Text>
-              <Text style={styles.timeAgo}>{product.timeAgo}</Text>
-            </View>
-            <View style={styles.actionButtons}>
-              <TouchableOpacity onPress={() => onToggleLike(product.id)}>
-                <Ionicons
-                  name={product.isLiked ? "heart" : "heart-outline"}
-                  size={theme.layout.iconSize.sm}
-                  color={
-                    product.isLiked
-                      ? theme.colors.heartRed
-                      : theme.colors.textSecondary
-                  }
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      ))}
-    </View>
+        ) : null
+      }
+    />
   );
 };
 
+const CARD_GAP = theme.spacing.md;
+
 const styles = StyleSheet.create({
-  productGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    padding: theme.spacing.md,
+  listContent: {
+    paddingHorizontal: CARD_GAP,
+    paddingTop: CARD_GAP,
+    paddingBottom: 96, // FAB와 겹치지 않게 여유
   },
-  productCard: {
-    width: "50%",
-    padding: theme.spacing.md,
+  column: {
+    // 두 카드 사이 가로 간격
+    justifyContent: "space-between",
   },
-  productImage: {
+  card: {
+    // 2열 균등폭
+    width: "48%", // columnWrapperStyle: space-between과 조합
+    marginBottom: CARD_GAP,
+  },
+  imageWrap: {
     width: "100%",
     aspectRatio: 1,
-    marginBottom: theme.spacing.md,
     borderRadius: theme.borderRadius.md,
     overflow: "hidden",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  placeholderImage: {
-    width: "100%",
-    height: "100%",
     backgroundColor: theme.colors.gray[100],
-    justifyContent: "center",
-    alignItems: "center",
+    position: "relative",
+    marginBottom: theme.spacing.sm,
   },
-  productInfo: {
+  image: { width: "100%", height: "100%", resizeMode: "cover" },
+  placeholder: {
     flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  productTitle: {
+
+  likeBtn: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chatBadge: {
+    position: "absolute",
+    right: 8,
+    bottom: 8,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 8,
+    height: 22,
+    borderRadius: 11,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  chatBadgeText: {
+    color: theme.colors.white,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+
+  info: {},
+  title: {
     fontSize: theme.typography.fontSize.base,
     color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
     lineHeight: theme.typography.lineHeight.normal,
   },
-  productPrice: {
+  price: {
     fontSize: theme.typography.fontSize.md,
     fontWeight: theme.typography.fontWeight.semiBold,
     color: theme.colors.text,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
-  productMeta: {
-    marginBottom: theme.spacing.md,
+  meta: {
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   location: {
+    flex: 1,
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
+    marginRight: theme.spacing.xs,
   },
   timeAgo: {
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.textSecondary,
   },
-  actionButtons: {
+
+  // Skeleton
+  skeletonRow: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
-  // skeleton styles
-  skeletonCard: {
-    width: "50%",
-    padding: theme.spacing.md,
-  },
-  skeletonImage: {
+  skelImage: {
     width: "100%",
     aspectRatio: 1,
     backgroundColor: theme.colors.gray[200],
     borderRadius: theme.borderRadius.md,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
-  skeletonLine: {
+  skelLine: {
     height: 12,
     backgroundColor: theme.colors.gray[200],
     borderRadius: theme.borderRadius.sm,
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
   },
-  skeletonLineShort: {
-    width: "60%",
+  skelLineShort: { width: "60%" },
+
+  footerLoading: {
+    alignItems: "center",
+    paddingVertical: theme.spacing.lg,
   },
 });
 

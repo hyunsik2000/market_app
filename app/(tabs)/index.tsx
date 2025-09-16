@@ -3,31 +3,21 @@ import Header from "@/components/Common/Header";
 import Category from "@/components/Home/Category";
 import ProductGrid from "@/components/Home/ProductGrid";
 import { theme } from "@/styles/theme";
+import type { Product } from "@/types/product";
 import {
   handleNotificationPress,
   handleSearchPress,
 } from "@/utils/Header/handleNotification";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   Platform,
   SafeAreaView,
-  ScrollView,
   StatusBar,
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-
-interface Product {
-  id: number;
-  title: string;
-  price: string;
-  location: string;
-  timeAgo: string;
-  image?: string;
-  isLiked?: boolean;
-  chatCount?: number;
-}
 
 const mockProducts: Product[] = [
   {
@@ -131,13 +121,14 @@ export default function HomeScreen() {
       />
 
       {/* Product Grid */}
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <ProductGrid
-          products={products}
-          loading={loading}
-          onToggleLike={toggleLike}
-        />
-      </ScrollView>
+      <ProductGrid
+        products={products}
+        loading={loading}
+        onToggleLike={toggleLike}
+        onPressItem={(id) =>
+          router.push({ pathname: "/product/[id]", params: { id: String(id) } })
+        }
+      />
 
       {/* Floating Action Button */}
       <TouchableOpacity style={styles.fab}>
